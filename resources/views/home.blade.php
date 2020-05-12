@@ -5,8 +5,11 @@
         <!-- CSRF保護 -->
         @csrf
         <h2>チェックする課題を選択</h2>
-        <p><label><input type="radio" name="kad" id="kad" value="01_1">k_01_1.sh</label></p>
-        <p><label><input type="radio" name="kad" id="kad" value="01_2">k_01_2.sh</label></p>
+        <p><label><input type="radio" name="kad" id="kad" value="01_1">k_01_1.sh</label><br>
+        <label><input type="radio" name="kad" id="kad" value="01_2">k_01_2.sh</label><br>
+        <label><input type="radio" name="kad" id="kad" value="02_1">k_02_1.sh</label><br>
+        <label><input type="radio" name="kad" id="kad" value="02_2">k_02_2.sh</label><br>
+        <label><input type="radio" name="kad" id="kad" value="02_3">k_02_3.sh</label></p>
         <h2>自分の課題ファイルをアップロード</h2>
         <p><input type="file" name="kadfile" id="kadfile"></p>
         <p><input type="submit" value="課題チェック"></p>

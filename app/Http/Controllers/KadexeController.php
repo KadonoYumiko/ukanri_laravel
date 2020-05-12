@@ -11,9 +11,11 @@ class KadexeController extends Controller
 {
     private static function cmdexec($filename, $kadno, $param, &$tblval, &$okcnt, &$tcnt)
     {
-        $cmd = 'sh' . ' ' . $filename . $param;
+        // 自分の課題提出ディレクトリに移動してから実行する
+        chdir('../../usr/' . Auth::user()->name . '/');
+        $cmd = 'source' . ' ' . $filename . $param;
         exec($cmd, $opt, $ret);
-        $cmd2 = 'sh' . ' ../../kadans/k_' . $kadno . '.sh' . $param;
+        $cmd2 = 'source' . ' ../../kadans/k_' . $kadno . '.sh' . $param;
         exec($cmd2, $opt2, $ret2);
 
         for ($i = 0; $i < count($opt); $i++) {
@@ -56,7 +58,7 @@ class KadexeController extends Controller
         }
 
         //パラメータセット
-        $param = ['01_1' => '', '01_2' => [' kad01', ' kad02']];
+        $param = ['01_1' => '', '01_2' => [' kad01', ' kad02'], '02_1' => '', '02_2' => '', '02_3' => [' 01', ' 02']];
 
 
         //シェルスクリプト実行
