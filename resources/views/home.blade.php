@@ -4,16 +4,27 @@
     <form action="check" method="POST" enctype="multipart/form-data">
         <!-- CSRF保護 -->
         @csrf
-        <h2>チェックする課題を選択</h2>
-        <p><label><input type="radio" name="kad" id="kad" value="01_1">k_01_1.sh</label><br>
-        <label><input type="radio" name="kad" id="kad" value="01_2">k_01_2.sh</label><br>
-        <label><input type="radio" name="kad" id="kad" value="02_1">k_02_1.sh</label><br>
-        <label><input type="radio" name="kad" id="kad" value="02_2">k_02_2.sh</label><br>
-        <label><input type="radio" name="kad" id="kad" value="02_3">k_02_3.sh</label></p>
+        <h1>課題提出状況</h1>
+        <h2>提出する課題のラジオボタンを選択してください。</h2>
+        <table class="table">
+        <tr><th>課題番号</th><th>得点</th></tr>
+        @isset($res)
+            {!!$res!!}
+        @endisset
+        </table>
+
         <h2>自分の課題ファイルをアップロード</h2>
         <p><input type="file" name="kadfile" id="kadfile"></p>
         <p><input type="submit" value="課題チェック"></p>
     </form>
+    <!-- 入力値エラー時表示-->
+    @if (count($errors) > 0)
+        <span class="alert alert-danger">
+                @foreach ($errors->all() as $error)
+                    {{ $error }}
+                @endforeach
+          </span>
+    @endif
     @isset($score)
         <h2>{!!$score!!}</h2>
     @endisset

@@ -4,29 +4,36 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use LengthException;
 use App\Result;
+use Exception;
 
 class KadexeController extends Controller
 {
     private static function cmdexec($filename, $kadno, $param, &$tblval, &$okcnt, &$tcnt)
     {
-        // 自分の課題提出ディレクトリに移動してから実行する
-        chdir('../../usr/' . Auth::user()->name . '/');
-        $cmd = 'source' . ' ' . $filename . $param;
+        //      ローカル環境用
+        //        $cmd = '"C:\Program Files\Git\bin\sh"' . ' ../../kadans/k_' . $kadno . '.sh' . $param;
+        $cmd = 'bash' . ' ../../kadans/k_' . $kadno . '.sh' . $param;
         exec($cmd, $opt, $ret);
-        $cmd2 = 'source' . ' ../../kadans/k_' . $kadno . '.sh' . $param;
+        //        $cmd2 = 'bash' . ' ' . $filename . $param;
+        $cmd2 = 'bash' . ' k_' . $kadno . '.sh' . $param;
         exec($cmd2, $opt2, $ret2);
 
         for ($i = 0; $i < count($opt); $i++) {
             $tblval[$tcnt] = '<tr>';
-            if ($opt[$i] == $opt2[$i]) {
+            if ($i < count($opt2) && $opt[$i] == $opt2[$i]) {
                 $tblval[$tcnt] .= '<td>○</td>';
                 $okcnt++;
             } else {
                 $tblval[$tcnt] .= '<td style="color:red">×</td>';
             }
-            $tblval[$tcnt++] .= '<td>' . ($i + 1) . '</td><td>' . $opt[$i] . '</td><td>' . $opt2[$i] . '</td></tr>';
+            $tblval[$tcnt] .= '<td>' . ($i + 1) . '</td><td>';
+            if ($i < count($opt2)) {
+                $tblval[$tcnt] .= $opt2[$i];
+            }
+            $tblval[$tcnt++] .= '</td><td>' . $opt[$i] . '</td></tr>';
         }
     }
 
@@ -41,11 +48,22 @@ class KadexeController extends Controller
         //         return view('kadexe', $data);
         return view('kadexe');
     }
-    public function post()
+    public function post(Request $request)
     {
         $tempfile = $_FILES['kadfile']['tmp_name'];    // 一時ファイル名
-        $filename = '../../usr/' . Auth::user()->name . '/' . $_FILES['kadfile']['name'];        // 本来のファイル名
+        $filename = '../../../usr/' . Auth::user()->name . '/' . $_FILES['kadfile']['name'];        // 本来のファイル名
         //$filename = '../../usr/' . 'in3a01' . '/' . $_FILES['kadfile']['name'];        // 本来のファイル名
+
+        //時刻入力欄のバリデーション。
+        $validated_data = [
+            'kad' => 'required',
+            'kadfile' => 'required'
+        ];
+        $errormsg = [
+            'kad.required' => 'アップロードする課題番号を選択してください',
+            'kadfile.required' => 'アップロードするファイルを指定してください'
+        ];
+        $request->validate($validated_data, $errormsg);
 
         if (is_uploaded_file($tempfile)) {
             if (move_uploaded_file($tempfile, $filename)) {
@@ -58,7 +76,15 @@ class KadexeController extends Controller
         }
 
         //パラメータセット
-        $param = ['01_1' => '', '01_2' => [' kad01', ' kad02'], '02_1' => '', '02_2' => '', '02_3' => [' 01', ' 02']];
+        $param = [
+            '01_1' => '', '01_2' => [' kad01', ' kad02'],
+            '02_1' => '', '02_2' => '', '02_3' => [' 01', ' 02'],
+            '03_1' => [' y', ' n', ' a'], '03_2' => '', '03_3' => [' k_03_1.sh', ' k_03_6.sh'], '03_4' => ['', '0', '13', ' 03'],
+            '06_1' => [' 192.168.1.1', ' 10.201.10.13', ' 10.201.10.18'], '06_2' => 'noexec',
+            '04_1' => 'noexec', '04_2' => ' k_04_1 k_04_2 k_04_4', '04_3' => 'noexec',
+            //                    '06_1' => ' 192.168.1.1', '06_2' => 'noexec',
+            '05_1' => 'noexec', '05_2' => ' k_05_1 k_05_2 k_05_3'
+        ];
 
 
         //シェルスクリプト実行
@@ -73,6 +99,9 @@ class KadexeController extends Controller
         // 正解に関係ない行数
         $cnt = 1;
 
+        // 自分の課題提出ディレクトリに移動してから実行する
+        chdir('../../../usr/' . Auth::user()->name . '/');
+
         if (is_array($param[$kadno])) {
             foreach ($param[$kadno] as $param) {
                 $tblval[$tcnt++] = '<tr><th colspan="4">パラメータ:' . $param . '</th></tr>';
@@ -80,19 +109,44 @@ class KadexeController extends Controller
                 KadexeController::cmdexec($filename, $kadno, $param, $tblval, $okcnt, $tcnt);
             }
         } else {
-            KadexeController::cmdexec($filename, $kadno, $param[$kadno], $tblval, $okcnt, $tcnt);
+            // パラメータが実行しないの場合は実行しない
+            if ($param[$kadno] != 'noexec') {
+                KadexeController::cmdexec($filename, $kadno, $param[$kadno], $tblval, $okcnt, $tcnt);
+            }
         }
 
         //        $tblval[$tcnt] = '</table><h2>得点</h2><h2>' . (round($okcnt / ($tcnt - $cnt) * 100)) . '</h2>';
 
         $data['msg'] = $tblval;
-        $score = round($okcnt / ($tcnt - $cnt) * 100);
+        try {
+            $score = round($okcnt / ($tcnt - $cnt) * 100);
+        } catch (Exception $e) {
+            $score = 0;
+        }
         $data['score'] = '</table><h2>得点</h2><h2>' . $score . '</h2>';
 
         // 対象レコードがあればUpdate、無ければInsert
         Result::where('name', Auth::user()->name)
             ->where('kadno', 'k_' . $kadno . '.sh')
             ->updateOrInsert([], ['name' => Auth::user()->name, 'kadno' => 'k_' . $kadno . '.sh', 'score' => $score, 'result' => implode($tblval)]);
+
+        // 提出課題を取得
+        $res = DB::table('results')->where('name', Auth::user()->name)
+            ->orderBy('kadno', 'asc')
+            ->get();
+
+        $data['res'] = '';
+
+        $kadlist = array("01_1", "01_2", "02_1", "02_2", "02_3", "03_1", "03_2", "03_3", "03_4", "04_1", "04_2", "04_3", "05_1", "05_2", "06_1", "06_2");
+        foreach ($kadlist as $param) {
+            $i = array_search('k_' . $param . '.sh', array_column($res->all(), 'kadno'));
+            if ($i !== false) {
+                $score = $res[$i]->score;
+            } else {
+                $score = '未提出';
+            }
+            $data['res'] .= '<tr><td><label><input type="radio" name="kad" id="kad" value="' . $param . '">k_' . $param . '</label></td><td>' . $score . '</td></tr>';
+        }
 
         return view('home', $data);
     }
