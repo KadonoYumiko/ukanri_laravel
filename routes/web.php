@@ -19,7 +19,11 @@ Auth::routes(['register' => false, 'confirm' => false]);
 
 Route::get('/home', 'HomeController@index')->name('home');
 
-Route::post('/check', 'KadexeController@post');
+Route::group(['prefix' => 'check', 'middleware' => 'auth'], function () {
+    Route::post('/', 'KadexeController@post');
+});
+
+Route::get('/result', 'ResultController@index');
 
 // Route::group(['prefix' => 'check', 'middleware' => 'web'], function () {
 //     Route::get('/', 'KadexeController@index');

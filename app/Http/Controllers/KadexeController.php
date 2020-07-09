@@ -15,13 +15,16 @@ class KadexeController extends Controller
     {
         //      ローカル環境用
         //        $cmd = '"C:\Program Files\Git\bin\sh"' . ' ../../kadans/k_' . $kadno . '.sh' . $param;
-        $cmd = 'bash' . ' ../../kadans/k_' . $kadno . '.sh' . $param;
+        $cmd = 'bash' . ' ../../kadans/k_' . $kadno . '.sh' . $param . ' 2>&1';
         exec($cmd, $opt, $ret);
         //        $cmd2 = 'bash' . ' ' . $filename . $param;
-        $cmd2 = 'bash' . ' k_' . $kadno . '.sh' . $param;
+        $cmd2 = 'bash' . ' k_' . $kadno . '.sh' . $param . ' 2>&1';
         exec($cmd2, $opt2, $ret2);
 
         for ($i = 0; $i < count($opt); $i++) {
+            $opt[$i] = mb_convert_kana($opt[$i],'kvrns');
+            $opt2[$i] =mb_convert_kana($opt2[$i],'kvrns');
+
             $tblval[$tcnt] = '<tr>';
             if ($i < count($opt2) && $opt[$i] == $opt2[$i]) {
                 $tblval[$tcnt] .= '<td>○</td>';
@@ -51,7 +54,7 @@ class KadexeController extends Controller
     public function post(Request $request)
     {
         $tempfile = $_FILES['kadfile']['tmp_name'];    // 一時ファイル名
-        $filename = '../../../usr/' . Auth::user()->name . '/' . $_FILES['kadfile']['name'];        // 本来のファイル名
+        $filename = '../../../../usr/' . Auth::user()->name . '/' . $_FILES['kadfile']['name'];        // 本来のファイル名
         //$filename = '../../usr/' . 'in3a01' . '/' . $_FILES['kadfile']['name'];        // 本来のファイル名
 
         //時刻入力欄のバリデーション。
@@ -83,7 +86,9 @@ class KadexeController extends Controller
             '06_1' => [' 192.168.1.1', ' 10.201.10.13', ' 10.201.10.18'], '06_2' => 'noexec',
             '04_1' => 'noexec', '04_2' => ' k_04_1 k_04_2 k_04_4', '04_3' => 'noexec',
             //                    '06_1' => ' 192.168.1.1', '06_2' => 'noexec',
-            '05_1' => 'noexec', '05_2' => ' k_05_1 k_05_2 k_05_3'
+            '05_1' => 'noexec', '05_2' => ' k_05_1 k_05_2 k_05_3',
+            '07_1' => ' id.lst', '07_2' => ['', ' data2.csv', ' data3.csv'], '07_3' => ['', ' aaa', ' phone.txt'],
+            '08_1' =>  ' phone.txt', '08_2' => 'noexec', '08_3' => [' 10.201.10', '']
         ];
 
 
@@ -100,7 +105,7 @@ class KadexeController extends Controller
         $cnt = 1;
 
         // 自分の課題提出ディレクトリに移動してから実行する
-        chdir('../../../usr/' . Auth::user()->name . '/');
+        chdir('../../../../usr/' . Auth::user()->name . '/');
 
         if (is_array($param[$kadno])) {
             foreach ($param[$kadno] as $param) {
@@ -137,7 +142,7 @@ class KadexeController extends Controller
 
         $data['res'] = '';
 
-        $kadlist = array("01_1", "01_2", "02_1", "02_2", "02_3", "03_1", "03_2", "03_3", "03_4", "04_1", "04_2", "04_3", "05_1", "05_2", "06_1", "06_2");
+        $kadlist = array("01_1", "01_2", "02_1", "02_2", "02_3", "03_1", "03_2", "03_3", "03_4", "04_1", "04_2", "04_3", "05_1", "05_2", "06_1", "06_2", "07_1", "07_2", "07_3", "08_1", "08_2", "08_3");
         foreach ($kadlist as $param) {
             $i = array_search('k_' . $param . '.sh', array_column($res->all(), 'kadno'));
             if ($i !== false) {
